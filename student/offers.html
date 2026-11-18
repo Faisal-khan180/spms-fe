@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Placement Offers — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<!-- Student Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-student">
+  <div class="container">
+    <a class="navbar-brand" href="drives.html">
+      <span>🎓</span> SPMS Student
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="studentNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="recommended.html">⭐ Recommended</a></li>
+        <li class="nav-item"><a class="nav-link" href="applications.html">📄 Applications</a></li>
+        <li class="nav-item"><a class="nav-link" href="interviews.html">🎙️ Interviews</a></li>
+        <li class="nav-item"><a class="nav-link active" href="offers.html">🏆 Offers</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="notifications.html">
+            🔔 Notifications <span class="badge bg-danger rounded-pill ms-1" id="unreadNotifBadge" style="display:none;">0</span>
+          </a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="profile.html" class="nav-link">👤 Profile</a>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 900px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">🏆 Job Offers & Selections</h2>
+      <p class="text-muted mb-0">Official placement offers extended to you by participating recruiters.</p>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <div id="offersList">
+    <div class="text-center py-5">
+      <div class="spinner-border text-success"></div>
+      <p class="text-muted mt-2">Loading placement offers…</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['student']);
+
+  async function loadOffers() {
+    try {
+      const res = await apiRequest('/selections/my');
+      renderOffers(res.data?.offers || []);
+      updateNotificationBadge();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+      document.getElementById('offersList').innerHTML = '';
+    }
+  }
+
+  const offerBadgeMap = {
+    offered: 'bg-warning text-dark',
+    accepted: 'bg-success',
+    declined: 'bg-danger'
+  };
+
+  function renderOffers(offers) {
+    const container = document.getElementById('offersList');
+    if (!offers.length) {
+      container.innerHTML = `
+        <div class="card p-5 text-center text-muted">
+          <div class="fs-1 mb-2">🏆</div>
+          <h5>No placement offers yet.</h5>
+          <p class="mb-0">Keep participating in drives and interviews. Best of luck!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = offers.map(o => `
+      <div class="card mb-3 shadow-sm border-0 animate-fade-in ${o.status === 'accepted' ? 'border-start border-success border-4' : ''}">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <span class="badge ${offerBadgeMap[o.status] || 'bg-secondary'} mb-2 text-uppercase">
+                Offer ${escHtml(o.status)}
+              </span>
+              <h4 class="fw-bold text-dark mb-1">${escHtml(o.drive_title)}</h4>
+              <div class="fw-semibold text-primary fs-5">${escHtml(o.company_name)}</div>
+            </div>
+            <div class="text-end">
+              <div class="fs-2 fw-bold text-success">${formatCurrency(o.package_offered)}</div>
+              <small class="text-muted">Offered Date: ${formatDate(o.offer_date)}</small>
+            </div>
+          </div>
+
+          ${o.status === 'offered' ? `
+            <div class="alert alert-warning d-flex justify-content-between align-items-center mt-3 mb-0 py-2">
+              <small>Please respond to this placement offer:</small>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-success px-3" onclick="respondOffer(${o.id}, 'accepted')">
+                  ✅ Accept Offer
+                </button>
+                <button class="btn btn-sm btn-outline-danger px-3" onclick="respondOffer(${o.id}, 'declined')">
+                  Decline
+                </button>
+              </div>
+            </div>
+          ` : `
+            <div class="mt-3 pt-2 border-top small text-muted">
+              You have <strong>${escHtml(o.status)}</strong> this offer.
+            </div>
+          `}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function respondOffer(id, status) {
+    const actionText = status === 'accepted' ? 'ACCEPT' : 'DECLINE';
+    if (!confirm(`Are you sure you want to ${actionText} this offer? This decision is final.`)) return;
+
+    try {
+      await apiRequest(`/selections/${id}/status`, {
+        method: 'PATCH',
+        body: { status }
+      });
+      showAlert(`Offer ${status} successfully!`, status === 'accepted' ? 'success' : 'info');
+      await loadOffers();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  loadOffers();
+</script>
+</body>
+</html>

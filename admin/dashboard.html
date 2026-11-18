@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard & Analytics — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Admin Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-admin">
+  <div class="container">
+    <a class="navbar-brand" href="dashboard.html">
+      <span>🛡️</span> SPMS Admin TPO
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="adminNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="dashboard.html">📊 Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="companies.html">🏢 Companies</a></li>
+        <li class="nav-item"><a class="nav-link" href="students.html">🎓 Students</a></li>
+        <li class="nav-item"><a class="nav-link" href="applications.html">📄 Applications</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <span class="user-badge">🛡️ TPO Administrator</span>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+      <h2 class="mb-1 fw-bold">Training & Placement Cell Dashboard</h2>
+      <p class="text-muted mb-0">Live placement statistics, company approvals, drive verifications, and analytics.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="drives.html" class="btn btn-danger btn-sm">💼 Review Drives</a>
+      <a href="companies.html" class="btn btn-outline-danger btn-sm">🏢 Verify Companies</a>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- KPI Metric Cards -->
+  <div class="row g-3 mb-4" id="statsGrid">
+    <div class="col-md-3 col-6">
+      <div class="card stat-card border-0 shadow-sm bg-white">
+        <div class="stat-icon bg-primary bg-opacity-10 text-primary">🎓</div>
+        <div class="stat-number text-primary" id="statStudents">—</div>
+        <div class="stat-label">Registered Students</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stat-card border-0 shadow-sm bg-white">
+        <div class="stat-icon bg-success bg-opacity-10 text-success">🏢</div>
+        <div class="stat-number text-success" id="statCompanies">—</div>
+        <div class="stat-label">Recruiter Companies</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stat-card border-0 shadow-sm bg-white">
+        <div class="stat-icon bg-info bg-opacity-10 text-info">💼</div>
+        <div class="stat-number text-info" id="statActiveDrives">—</div>
+        <div class="stat-label">Active Drives</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stat-card border-0 shadow-sm bg-white">
+        <div class="stat-icon bg-danger bg-opacity-10 text-danger">🏆</div>
+        <div class="stat-number text-danger" id="statSelections">—</div>
+        <div class="stat-label">Accepted Placements</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Approvals Banner -->
+  <div class="row g-3 mb-4" id="pendingBannerRow" style="display:none;">
+    <div class="col-md-6" id="pendingCompCol" style="display:none;">
+      <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0 shadow-sm">
+        <div>
+          <strong class="d-block">🏢 Pending Company Registrations</strong>
+          <small><span id="pendingCompCount">0</span> companies waiting for TPO approval.</small>
+        </div>
+        <a href="companies.html" class="btn btn-sm btn-warning">Review & Approve →</a>
+      </div>
+    </div>
+    <div class="col-md-6" id="pendingDriveCol" style="display:none;">
+      <div class="alert alert-danger d-flex justify-content-between align-items-center mb-0 shadow-sm">
+        <div>
+          <strong class="d-block">💼 Pending Placement Drives</strong>
+          <small><span id="pendingDriveCount">0</span> placement drives submitted for review.</small>
+        </div>
+        <a href="drives.html" class="btn btn-sm btn-danger">Review Drives →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <!-- Branch-wise Placement Chart -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>📊 Placements by Department / Branch</span>
+        </div>
+        <div class="card-body">
+          <canvas id="branchChart" style="max-height: 280px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Status Funnel Chart -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold">
+          <span>🎯 Application Pipeline Distribution</span>
+        </div>
+        <div class="card-body">
+          <canvas id="funnelChart" style="max-height: 280px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Applications & Top Recruiters -->
+  <div class="row g-4">
+    <!-- Recent Applications Table -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>🕒 Recent Applications</span>
+          <a href="applications.html" class="small text-decoration-none">View All Applications →</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="recentAppsTable">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Drive & Company</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="text-center py-4 text-muted"><div class="spinner-border text-danger spinner-border-sm"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Recruiters -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">🏢 Top Recruiting Partners</div>
+        <div class="card-body p-0" id="topRecruitersList">
+          <div class="text-center py-4 text-muted"><div class="spinner-border text-danger spinner-border-sm"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['admin']);
+
+  let branchChartInstance = null;
+  let funnelChartInstance = null;
+
+  async function loadDashboard() {
+    try {
+      const res = await apiRequest('/admin/stats');
+      const stats = res.data.stats;
+      const analytics = res.data.analytics;
+      const recentApps = res.data.recent_applications || [];
+
+      // Render KPI numbers
+      document.getElementById('statStudents').textContent = stats.students || 0;
+      document.getElementById('statCompanies').textContent = stats.companies || 0;
+      document.getElementById('statActiveDrives').textContent = stats.active_drives || 0;
+      document.getElementById('statSelections').textContent = stats.selections || 0;
+
+      // Pending action alerts
+      if (stats.pending_companies > 0 || stats.pending_drives > 0) {
+        document.getElementById('pendingBannerRow').style.display = 'flex';
+        if (stats.pending_companies > 0) {
+          document.getElementById('pendingCompCol').style.display = 'block';
+          document.getElementById('pendingCompCount').textContent = stats.pending_companies;
+        }
+        if (stats.pending_drives > 0) {
+          document.getElementById('pendingDriveCol').style.display = 'block';
+          document.getElementById('pendingDriveCount').textContent = stats.pending_drives;
+        }
+      }
+
+      // Render Charts
+      renderBranchChart(analytics.branch_placements || []);
+      renderFunnelChart(analytics.application_status || []);
+
+      // Render Recent Apps
+      renderRecentApps(recentApps);
+
+      // Render Top Recruiters
+      renderTopRecruiters(analytics.top_companies || []);
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  function renderBranchChart(branchData) {
+    const ctx = document.getElementById('branchChart').getContext('2d');
+    if (branchChartInstance) branchChartInstance.destroy();
+
+    const labels = branchData.length ? branchData.map(b => b.branch) : ['Computer Science', 'Electronics', 'Mechanical', 'IT'];
+    const counts = branchData.length ? branchData.map(b => b.placed_count) : [0, 0, 0, 0];
+
+    branchChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Students Placed',
+          data: counts,
+          backgroundColor: '#4f46e5',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+  }
+
+  const statusBadgeMap = {
+    applied: 'badge-status-applied',
+    shortlisted: 'badge-status-shortlisted',
+    interview_scheduled: 'badge-status-interview',
+    selected: 'badge-status-selected',
+    rejected: 'badge-status-rejected',
+    withdrawn: 'badge-status-withdrawn'
+  };
+
+  function renderFunnelChart(statusData) {
+    const ctx = document.getElementById('funnelChart').getContext('2d');
+    if (funnelChartInstance) funnelChartInstance.destroy();
+
+    const labels = statusData.map(s => s.status.replace('_', ' ').toUpperCase());
+    const counts = statusData.map(s => s.count);
+
+    const colors = [
+      '#3b82f6', '#10b981', '#f59e0b', '#059669', '#ef4444', '#94a3b8'
+    ];
+
+    funnelChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels.length ? labels : ['No Data'],
+        datasets: [{
+          data: counts.length ? counts : [1],
+          backgroundColor: colors
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  function renderRecentApps(apps) {
+    const tbody = document.querySelector('#recentAppsTable tbody');
+    if (!apps.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No recent applications.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = apps.map(a => `
+      <tr>
+        <td>
+          <div class="fw-bold">${escHtml(a.student_name)}</div>
+          <small class="text-muted">${escHtml(a.roll_number)} (${escHtml(a.branch)})</small>
+        </td>
+        <td>
+          <div class="fw-semibold text-primary">${escHtml(a.drive_title)}</div>
+          <small class="text-muted">${escHtml(a.company_name)}</small>
+        </td>
+        <td class="small text-muted">${formatDate(a.applied_at)}</td>
+        <td>
+          <span class="badge ${statusBadgeMap[a.status] || 'bg-secondary'} text-uppercase">
+            ${escHtml(a.status.replace('_', ' '))}
+          </span>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderTopRecruiters(companies) {
+    const container = document.getElementById('topRecruitersList');
+    if (!companies.length) {
+      container.innerHTML = '<div class="text-center text-muted py-4">No hiring records yet.</div>';
+      return;
+    }
+
+    container.innerHTML = companies.map(c => `
+      <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <div>
+          <h6 class="fw-bold mb-0">${escHtml(c.company_name)}</h6>
+          <small class="text-muted">${escHtml(c.industry || 'Corporate')}</small>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-success">${c.hires_count} Placed</span>
+          ${c.max_package ? `<small class="text-muted d-block mt-1">Up to ${formatCurrency(c.max_package)}</small>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

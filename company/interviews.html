@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Interviews & Rounds — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<!-- Company Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-company">
+  <div class="container">
+    <a class="navbar-brand" href="drives.html">
+      <span>🏢</span> SPMS Recruiter
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#companyNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="companyNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="drives.html">💼 Placement Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="create-drive.html">➕ Create Drive</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="profile.html" class="nav-link">🏢 Profile</a>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <a href="drives.html" class="small text-decoration-none">← Back to Drives</a>
+      <h2 class="mb-1" id="driveHeading">Interview Management</h2>
+      <p class="text-muted mb-0" id="driveSubtitle">Define interview rounds, schedule candidates, and record evaluation results.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="#" id="viewApplicantsBtn" class="btn btn-outline-primary btn-sm">👥 View Applicants</a>
+      <a href="#" id="viewSelectionsBtn" class="btn btn-outline-success btn-sm">🏆 Final Selections</a>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <div class="row g-4">
+    <!-- Left Column: Add Round & Schedule Candidate -->
+    <div class="col-lg-4">
+      <!-- Add Round -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">➕ Add Interview Round</div>
+        <div class="card-body">
+          <form id="roundForm">
+            <div class="mb-3">
+              <label class="form-label">Round Number</label>
+              <input type="number" class="form-control" name="round_number" id="rNumber" min="1" required placeholder="e.g. 1" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Round Name</label>
+              <input type="text" class="form-control" name="round_name" id="rName" placeholder="e.g. Technical Round 1, HR Interview" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Scheduled Date & Time</label>
+              <input type="datetime-local" class="form-control" name="scheduled_date" id="rDate" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100" id="addRoundBtn">Add Round</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Schedule Candidate Form -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">📅 Schedule Candidate for Round</div>
+        <div class="card-body">
+          <form id="scheduleCandidateForm">
+            <div class="mb-3">
+              <label class="form-label">Select Candidate</label>
+              <select class="form-select" name="application_id" id="candidateSelect" required>
+                <option value="">Loading applicants…</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Select Interview Round</label>
+              <select class="form-select" name="round_id" id="roundSelect" required>
+                <option value="">-- Select Round --</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-success w-100" id="scheduleBtn">Schedule & Notify Student</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Rounds Overview & Results Table -->
+    <div class="col-lg-8">
+      <!-- Rounds List -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">Rounds Created for this Drive</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="roundsTable">
+              <thead>
+                <tr>
+                  <th>Round #</th>
+                  <th>Round Name</th>
+                  <th>Scheduled Timing</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="3" class="text-center text-muted py-3">No rounds created yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheduled Candidates & Evaluations -->
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Scheduled Candidate Evaluations</span>
+          <button class="btn btn-xs btn-outline-secondary" onclick="loadDriveData()">↻ Refresh</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="resultsTable">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Round</th>
+                  <th>Status</th>
+                  <th>Feedback & Interviewer</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border text-primary spinner-border-sm"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Evaluate Candidate Modal -->
+<div class="modal fade" id="evaluateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Record Interview Result</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="evaluateForm">
+        <div class="modal-body">
+          <input type="hidden" id="evalResultId" />
+          <div class="mb-3">
+            <label class="form-label">Candidate Name</label>
+            <input type="text" class="form-control" id="evalCandidateName" disabled />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Round</label>
+            <input type="text" class="form-control" id="evalRoundName" disabled />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Interview Outcome <span class="text-danger">*</span></label>
+            <select class="form-select" id="evalStatus" required>
+              <option value="pass">✅ Pass (Cleared Round)</option>
+              <option value="fail">❌ Fail (Did not clear)</option>
+              <option value="absent">⚠️ Absent / No Show</option>
+              <option value="scheduled">⏳ Still Scheduled</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Interviewer Name</label>
+            <input type="text" class="form-control" id="evalInterviewer" placeholder="e.g. Neha Kapoor (Senior Engineer)" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Detailed Feedback</label>
+            <textarea class="form-control" id="evalFeedback" rows="3" placeholder="Technical strengths, areas for improvement, recommendations…"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Result & Notify</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['company']);
+
+  const params  = new URLSearchParams(window.location.search);
+  const driveId = params.get('id');
+  if (!driveId) window.location.href = 'drives.html';
+
+  document.getElementById('viewApplicantsBtn').href = `drive-applications.html?id=${driveId}`;
+  document.getElementById('viewSelectionsBtn').href = `selections.html?id=${driveId}`;
+
+  let cachedRounds = [];
+  let cachedApplicants = [];
+  let cachedResults = [];
+
+  async function loadDriveData() {
+    try {
+      // 1. Load Drive Info
+      const drRes = await apiRequest(`/drives/${driveId}`);
+      document.getElementById('driveHeading').textContent = `Interviews: ${drRes.data.drive.title}`;
+
+      // 2. Load Rounds
+      const rRes = await apiRequest(`/interviews/drives/${driveId}/rounds`);
+      cachedRounds = rRes.data?.rounds || [];
+      renderRounds(cachedRounds);
+
+      // 3. Load Applicants (for scheduling selector)
+      const appRes = await apiRequest(`/drives/${driveId}/applications`);
+      cachedApplicants = appRes.data?.applications || [];
+      renderCandidateSelect(cachedApplicants);
+
+      // 4. Load Scheduled Results
+      const resData = await apiRequest(`/interviews/drives/${driveId}/results`);
+      cachedResults = resData.data?.results || [];
+      renderResults(cachedResults);
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  function renderRounds(rounds) {
+    const tbody = document.querySelector('#roundsTable tbody');
+    const select = document.getElementById('roundSelect');
+
+    if (!rounds.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No interview rounds defined yet.</td></tr>';
+      select.innerHTML = '<option value="">-- No rounds available --</option>';
+      document.getElementById('rNumber').value = 1;
+      return;
+    }
+
+    tbody.innerHTML = rounds.map(r => `
+      <tr>
+        <td><span class="badge bg-primary rounded-pill">Round ${r.round_number}</span></td>
+        <td class="fw-bold">${escHtml(r.round_name)}</td>
+        <td class="small text-muted">${formatDateTime(r.scheduled_date)}</td>
+      </tr>
+    `).join('');
+
+    select.innerHTML = '<option value="">-- Select Interview Round --</option>' +
+      rounds.map(r => `<option value="${r.id}">Round ${r.round_number}: ${escHtml(r.round_name)}</option>`).join('');
+
+    // Suggest next round number
+    const maxRound = Math.max(...rounds.map(r=>r.round_number), 0);
+    document.getElementById('rNumber').value = maxRound + 1;
+  }
+
+  function renderCandidateSelect(applicants) {
+    const select = document.getElementById('candidateSelect');
+    if (!applicants.length) {
+      select.innerHTML = '<option value="">No applicants found</option>';
+      return;
+    }
+
+    // Filter to active applicants (applied, shortlisted, interview_scheduled)
+    const active = applicants.filter(a => a.status !== 'withdrawn' && a.status !== 'rejected');
+    select.innerHTML = '<option value="">-- Select Candidate --</option>' +
+      active.map(a => `
+        <option value="${a.application_id}">
+          ${escHtml(a.student_name)} (${escHtml(a.roll_number)} - ${escHtml(a.branch)}) [${a.status}]
+        </option>
+      `).join('');
+  }
+
+  const resultBadgeMap = {
+    scheduled: 'bg-primary',
+    pass: 'bg-success',
+    fail: 'bg-danger',
+    absent: 'bg-secondary'
+  };
+
+  function renderResults(results) {
+    const tbody = document.querySelector('#resultsTable tbody');
+    if (!results.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">
+            No candidates have been scheduled for interview rounds yet.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = results.map(r => `
+      <tr>
+        <td>
+          <div class="fw-bold text-dark">${escHtml(r.student_name)}</div>
+          <div class="small text-muted">${escHtml(r.roll_number)} · ${escHtml(r.branch)}</div>
+        </td>
+        <td>
+          <span class="badge bg-light text-dark border">Round ${r.round_number}: ${escHtml(r.round_name)}</span>
+          <div class="small text-muted">${formatDateTime(r.scheduled_date)}</div>
+        </td>
+        <td>
+          <span class="badge ${resultBadgeMap[r.status] || 'bg-secondary'} text-uppercase">
+            ${escHtml(r.status)}
+          </span>
+        </td>
+        <td>
+          ${r.feedback ? `<div class="small fst-italic text-muted">"${escHtml(r.feedback)}"</div>` : '<span class="text-muted small">No feedback recorded</span>'}
+          ${r.interviewer_name ? `<div class="small text-primary">Interviewer: ${escHtml(r.interviewer_name)}</div>` : ''}
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary" onclick="openEvaluateModal(${r.result_id})">
+            📝 Grade / Feedback
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Add Round Form
+  document.getElementById('roundForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await apiRequest(`/interviews/drives/${driveId}/rounds`, {
+        method: 'POST',
+        body: {
+          round_number: Number(fd.get('round_number')),
+          round_name: fd.get('round_name'),
+          scheduled_date: fd.get('scheduled_date') ? fd.get('scheduled_date').replace('T', ' ') + ':00' : null
+        }
+      });
+      showAlert('Interview round added successfully.', 'success');
+      e.target.reset();
+      await loadDriveData();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  // Schedule Candidate Form
+  document.getElementById('scheduleCandidateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await apiRequest('/interviews/schedule', {
+        method: 'POST',
+        body: {
+          application_id: Number(fd.get('application_id')),
+          round_id: Number(fd.get('round_id'))
+        }
+      });
+      showAlert('Candidate scheduled and notified successfully!', 'success');
+      e.target.reset();
+      await loadDriveData();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  // Modal evaluation
+  function openEvaluateModal(resultId) {
+    const r = cachedResults.find(x => x.result_id === resultId);
+    if (!r) return;
+
+    document.getElementById('evalResultId').value = r.result_id;
+    document.getElementById('evalCandidateName').value = `${r.student_name} (${r.roll_number})`;
+    document.getElementById('evalRoundName').value = `Round ${r.round_number}: ${r.round_name}`;
+    document.getElementById('evalStatus').value = r.status || 'pass';
+    document.getElementById('evalInterviewer').value = r.interviewer_name || '';
+    document.getElementById('evalFeedback').value = r.feedback || '';
+
+    new bootstrap.Modal(document.getElementById('evaluateModal')).show();
+  }
+
+  document.getElementById('evaluateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultId = document.getElementById('evalResultId').value;
+    const status = document.getElementById('evalStatus').value;
+    const interviewer_name = document.getElementById('evalInterviewer').value;
+    const feedback = document.getElementById('evalFeedback').value;
+
+    try {
+      await apiRequest(`/interviews/results/${resultId}`, {
+        method: 'PATCH',
+        body: { status, interviewer_name, feedback }
+      });
+      bootstrap.Modal.getInstance(document.getElementById('evaluateModal')).hide();
+      showAlert('Interview outcome saved successfully!', 'success');
+      await loadDriveData();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  loadDriveData();
+</script>
+</body>
+</html>

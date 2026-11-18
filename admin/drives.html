@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Placement Drives — SPMS Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<!-- Admin Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-admin">
+  <div class="container">
+    <a class="navbar-brand" href="dashboard.html">
+      <span>🛡️</span> SPMS Admin TPO
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="adminNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="dashboard.html">📊 Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="drives.html">💼 Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="companies.html">🏢 Companies</a></li>
+        <li class="nav-item"><a class="nav-link" href="students.html">🎓 Students</a></li>
+        <li class="nav-item"><a class="nav-link" href="applications.html">📄 Applications</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <span class="user-badge">🛡️ TPO Administrator</span>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-1">Placement Drives Review & Approval</h2>
+      <p class="text-muted mb-0">Approve recruiter drive proposals, manage live drives, and monitor campus hiring.</p>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- Status Filter Pills -->
+  <div class="card mb-4">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search by drive title, company name…" oninput="filterDrives()" />
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="statusFilter" onchange="filterDrives()">
+            <option value="">All Drive Statuses</option>
+            <option value="pending_approval">⏳ Pending Approval</option>
+            <option value="approved">✅ Approved & Active</option>
+            <option value="rejected">❌ Rejected</option>
+            <option value="closed">🔒 Closed</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="drivesTable">
+          <thead>
+            <tr>
+              <th>Drive Role & Company</th>
+              <th>Package & Type</th>
+              <th>Eligible Criteria</th>
+              <th>Deadlines</th>
+              <th>Status</th>
+              <th class="text-end">TPO Review Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-danger"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Reason Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reject Placement Drive Proposal</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rejectDriveId" />
+        <p class="text-muted">Are you sure you want to reject this placement drive? The recruiter will be notified.</p>
+        <div class="mb-3">
+          <label class="form-label">Rejection Reason (Optional)</label>
+          <textarea class="form-control" id="rejectionReasonInput" rows="3" placeholder="Explain why the proposal was rejected (e.g. invalid criteria, compensation below college policy)…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="confirmRejectDrive()">Reject Drive</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['admin']);
+
+  let allDrives = [];
+
+  const statusBadgeMap = {
+    draft: 'badge-status-draft',
+    pending_approval: 'badge-status-pending',
+    approved: 'badge-status-approved',
+    rejected: 'badge-status-rejected',
+    closed: 'badge-status-closed'
+  };
+
+  async function loadDrives() {
+    try {
+      const res = await apiRequest('/drives/admin');
+      allDrives = res.data?.drives || [];
+      renderDrives(allDrives);
+    } catch (err) {
+      showAlert(err.message, 'danger');
+      document.querySelector('#drivesTable tbody').innerHTML = `
+        <tr><td colspan="6" class="text-center text-muted py-4">Failed to load drives.</td></tr>
+      `;
+    }
+  }
+
+  function filterDrives() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const status = document.getElementById('statusFilter').value;
+
+    const filtered = allDrives.filter(d => {
+      const matchSearch = !search ||
+        (d.title && d.title.toLowerCase().includes(search)) ||
+        (d.company_name && d.company_name.toLowerCase().includes(search));
+
+      const matchStatus = !status || d.status === status;
+
+      return matchSearch && matchStatus;
+    });
+
+    renderDrives(filtered);
+  }
+
+  function renderDrives(drives) {
+    const tbody = document.querySelector('#drivesTable tbody');
+    if (!drives.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="6" class="text-center text-muted py-5">No placement drives found for this filter.</td></tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = drives.map(d => `
+      <tr>
+        <td>
+          <div class="fw-bold text-dark">${escHtml(d.title)}</div>
+          <div class="small text-primary">${escHtml(d.company_name)}</div>
+          <div class="small text-muted">${escHtml(d.location || 'Location TBD')}</div>
+        </td>
+        <td>
+          <div class="fw-bold text-success">${formatCurrency(d.package_ctc)}</div>
+          <small class="text-muted">${escHtml((d.job_type||'full_time').replace('_', ' ').toUpperCase())}</small>
+        </td>
+        <td>
+          <div class="small"><strong>CGPA:</strong> &ge; ${d.min_cgpa || 0} | <strong>Backlogs:</strong> &le; ${d.max_backlogs || 0}</div>
+          <small class="text-muted d-block">${(d.eligible_branches && d.eligible_branches.length) ? d.eligible_branches.join(', ') : 'All Branches'}</small>
+        </td>
+        <td class="small">
+          <div><strong>Deadline:</strong> ${formatDate(d.application_deadline)}</div>
+          <div class="text-muted"><strong>Drive:</strong> ${formatDate(d.drive_date)}</div>
+        </td>
+        <td>
+          <span class="badge ${statusBadgeMap[d.status] || 'bg-secondary'} text-uppercase">
+            ${escHtml(d.status.replace('_', ' '))}
+          </span>
+        </td>
+        <td class="text-end">
+          <div class="d-flex justify-content-end gap-1">
+            ${d.status === 'pending_approval' ? `
+              <button class="btn btn-sm btn-success" onclick="approveDrive(${d.id})">✅ Approve</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="openRejectModal(${d.id})">❌ Reject</button>
+            ` : ''}
+            ${d.status === 'approved' ? `
+              <button class="btn btn-sm btn-outline-secondary" onclick="closeDrive(${d.id})">Close Drive</button>
+            ` : ''}
+            ${d.status === 'rejected' ? `
+              <button class="btn btn-sm btn-outline-success" onclick="approveDrive(${d.id})">Re-Approve</button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function approveDrive(id) {
+    if (!confirm('Approve and publish this placement drive for student applications?')) return;
+    try {
+      await apiRequest(`/drives/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'approved' }
+      });
+      showAlert('Drive approved and opened successfully!', 'success');
+      await loadDrives();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  function openRejectModal(id) {
+    document.getElementById('rejectDriveId').value = id;
+    document.getElementById('rejectionReasonInput').value = '';
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+  }
+
+  async function confirmRejectDrive() {
+    const id = document.getElementById('rejectDriveId').value;
+    const reason = document.getElementById('rejectionReasonInput').value;
+
+    try {
+      await apiRequest(`/drives/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'rejected', reason: reason || null }
+      });
+      bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+      showAlert('Placement drive rejected.', 'info');
+      await loadDrives();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  async function closeDrive(id) {
+    if (!confirm('Close this placement drive to prevent new applications?')) return;
+    try {
+      await apiRequest(`/drives/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'closed' }
+      });
+      showAlert('Drive closed successfully.', 'info');
+      await loadDrives();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  loadDrives();
+</script>
+</body>
+</html>

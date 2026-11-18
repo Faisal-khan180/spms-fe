@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Profile — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .avatar-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--student-gradient);
+      color: white;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Student Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-student">
+  <div class="container">
+    <a class="navbar-brand" href="drives.html">
+      <span>🎓</span> SPMS Student
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="studentNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="recommended.html">⭐ Recommended</a></li>
+        <li class="nav-item"><a class="nav-link" href="applications.html">📄 Applications</a></li>
+        <li class="nav-item"><a class="nav-link" href="interviews.html">🎙️ Interviews</a></li>
+        <li class="nav-item"><a class="nav-link" href="offers.html">🏆 Offers</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="notifications.html">
+            🔔 Notifications <span class="badge bg-danger rounded-pill ms-1" id="unreadNotifBadge" style="display:none;">0</span>
+          </a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="profile.html" class="nav-link active">👤 <span id="navUserName">Profile</span></a>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 1040px;">
+  <div id="alertBox"></div>
+
+  <!-- Profile Header & Completeness -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar-circle" id="profileAvatar">ST</div>
+          <div>
+            <h3 class="mb-0 fw-bold" id="headerName">Loading…</h3>
+            <p class="text-muted mb-0" id="headerRollBranch">—</p>
+            <small class="text-muted" id="headerEmailPhone">—</small>
+          </div>
+        </div>
+
+        <div style="min-width: 240px;">
+          <div class="d-flex justify-content-between mb-1">
+            <small class="fw-bold text-muted text-uppercase">Profile Completeness</small>
+            <small class="fw-bold text-success" id="completenessPct">0%</small>
+          </div>
+          <div class="completeness-bar">
+            <div class="completeness-fill" id="completenessBar" style="width: 0%;"></div>
+          </div>
+          <small class="text-muted" id="completenessTips">Add resume & skills to unlock all drives.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Academic & Personal Info -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Academic & Personal Details</span>
+          <span class="badge bg-success">Student</span>
+        </div>
+        <div class="card-body">
+          <form id="profileForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" name="name" id="pName" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email Address (Login)</label>
+                <input type="email" class="form-control" id="pEmail" disabled />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" class="form-control" name="phone" id="pPhone" placeholder="10-digit mobile" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Roll Number</label>
+                <input type="text" class="form-control" id="pRollNumber" disabled />
+              </div>
+
+              <div class="col-12"><hr class="my-1 text-muted" /></div>
+
+              <div class="col-md-6">
+                <label class="form-label">Course <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="course" id="pCourse" placeholder="e.g. B.Tech, MCA" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Branch <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="branch" id="pBranch" required placeholder="e.g. Computer Science" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Degree</label>
+                <select class="form-select" name="degree" id="pDegree">
+                  <option value="B.Tech">B.Tech</option>
+                  <option value="MCA">MCA</option>
+                  <option value="MBA">MBA</option>
+                  <option value="M.Tech">M.Tech</option>
+                  <option value="BCA">BCA</option>
+                  <option value="B.Sc">B.Sc</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Batch Year <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="batch_year" id="pBatchYear" required min="2015" max="2035" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Passing Year</label>
+                <input type="number" class="form-control" name="passing_year" id="pPassingYear" min="2015" max="2035" placeholder="e.g. 2025" />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">CGPA (0–10)</label>
+                <input type="number" class="form-control" name="cgpa" id="pCgpa" step="0.01" min="0" max="10" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Active Backlogs</label>
+                <input type="number" class="form-control" name="backlog_count" id="pBacklogs" min="0" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Gender</label>
+                <select class="form-select" name="gender" id="pGender">
+                  <option value="">Select...</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">10th Standard Percentage (%)</label>
+                <input type="number" class="form-control" name="tenth_percentage" id="p10th" step="0.01" min="0" max="100" placeholder="e.g. 88.5" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">12th / Diploma Percentage (%)</label>
+                <input type="number" class="form-control" name="twelfth_percentage" id="p12th" step="0.01" min="0" max="100" placeholder="e.g. 85.0" />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" class="form-control" name="dob" id="pDob" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Address</label>
+                <input type="text" class="form-control" name="address" id="pAddress" placeholder="City, State" />
+              </div>
+
+              <div class="col-12 mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-success flex-grow-1" id="saveProfileBtn">
+                  Save Profile Changes
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="clearStudentForm()">
+                  🧹 Clear Form
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Resume, Skills, Projects, Certifications -->
+    <div class="col-lg-5">
+      <!-- Resume Upload Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">📄 Resume / CV</div>
+        <div class="card-body">
+          <div id="resumeStatusBox" class="mb-3">
+            <div class="text-muted small">Checking resume status…</div>
+          </div>
+
+          <form id="resumeForm">
+            <label class="form-label small fw-bold">Upload New Resume (PDF / DOCX, max 5MB)</label>
+            <div class="input-group">
+              <input type="file" class="form-control" name="resume" id="resumeFileInput" accept=".pdf,.doc,.docx" required />
+              <button class="btn btn-primary" type="submit" id="uploadResumeBtn">Upload</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Skills Management Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">⚡ Technical Skills</div>
+        <div class="card-body">
+          <div id="skillsChipContainer" class="mb-3">
+            <!-- Chips rendered here -->
+          </div>
+
+          <form id="addSkillForm" class="d-flex gap-2 mb-3">
+            <input type="text" class="form-control form-control-sm" id="skillNameInput" placeholder="Add a skill (e.g. React, SQL, Python)" required />
+            <button class="btn btn-sm btn-success flex-shrink-0" type="submit">+ Add</button>
+          </form>
+
+          <small class="text-muted d-block mb-1 fw-bold">Popular Suggestions:</small>
+          <div class="d-flex flex-wrap gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('JavaScript')">+ JavaScript</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('Python')">+ Python</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('Java')">+ Java</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('SQL')">+ SQL</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('Node.js')">+ Node.js</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="quickAddSkill('React')">+ React</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projects Showcase Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">🚀 Projects</span>
+          <button class="btn btn-xs btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#newProjectCollapse">+ Add Project</button>
+        </div>
+        <div class="card-body">
+          <div class="collapse mb-3 p-3 bg-light rounded" id="newProjectCollapse">
+            <form id="addProjectForm">
+              <div class="mb-2">
+                <input type="text" class="form-control form-control-sm" name="title" placeholder="Project Title *" required />
+              </div>
+              <div class="mb-2">
+                <textarea class="form-control form-control-sm" name="description" rows="2" placeholder="Description"></textarea>
+              </div>
+              <div class="mb-2">
+                <input type="text" class="form-control form-control-sm" name="tech_stack" placeholder="Tech Stack (e.g. Node, React, MySQL)" />
+              </div>
+              <div class="mb-2">
+                <input type="url" class="form-control form-control-sm" name="project_url" placeholder="Project URL (GitHub, Demo)" />
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#newProjectCollapse">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary">Save Project</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="projectsListContainer">
+            <!-- Projects list -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Certifications Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">🏅 Certifications</span>
+          <button class="btn btn-xs btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#newCertCollapse">+ Add Certification</button>
+        </div>
+        <div class="card-body">
+          <div class="collapse mb-3 p-3 bg-light rounded" id="newCertCollapse">
+            <form id="addCertForm">
+              <div class="mb-2">
+                <input type="text" class="form-control form-control-sm" name="title" placeholder="Certification Title *" required />
+              </div>
+              <div class="mb-2">
+                <input type="text" class="form-control form-control-sm" name="issuing_organization" placeholder="Issuing Organization (e.g. AWS, Coursera)" />
+              </div>
+              <div class="mb-2">
+                <input type="date" class="form-control form-control-sm" name="issue_date" />
+              </div>
+              <div class="mb-2">
+                <input type="url" class="form-control form-control-sm" name="credential_url" placeholder="Credential URL" />
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#newCertCollapse">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary">Save Certification</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="certsListContainer">
+            <!-- Certifications list -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['student']);
+
+  let currentStudentData = null;
+
+  async function loadProfile() {
+    try {
+      const res = await apiRequest('/students/me');
+      currentStudentData = res.data.student;
+      renderProfile(currentStudentData);
+      updateNotificationBadge();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  function calculateCompleteness(s) {
+    let score = 0;
+    const total = 7;
+    if (s.name && s.roll_number && s.branch) score += 1;
+    if (s.course && s.passing_year) score += 1;
+    if (s.cgpa > 0) score += 1;
+    if (s.tenth_percentage && s.twelfth_percentage) score += 1;
+    if (s.resume_url) score += 1;
+    if (s.skills && s.skills.length > 0) score += 1;
+    if ((s.projects && s.projects.length > 0) || (s.certifications && s.certifications.length > 0)) score += 1;
+
+    return Math.round((score / total) * 100);
+  }
+
+  function renderProfile(s) {
+    // Header
+    const initials = s.name ? s.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'ST';
+    document.getElementById('profileAvatar').textContent = initials;
+    document.getElementById('headerName').textContent = s.name || 'Student';
+    document.getElementById('navUserName').textContent = s.name ? s.name.split(' ')[0] : 'Profile';
+    document.getElementById('headerRollBranch').textContent = `${s.roll_number} · ${s.branch} (${s.degree || 'B.Tech'})`;
+    document.getElementById('headerEmailPhone').textContent = `${s.email} ${s.phone ? '· ' + s.phone : ''}`;
+
+    // Completeness
+    const pct = calculateCompleteness(s);
+    document.getElementById('completenessPct').textContent = `${pct}%`;
+    document.getElementById('completenessBar').style.width = `${pct}%`;
+    if (pct === 100) {
+      document.getElementById('completenessTips').innerHTML = '🎉 Excellent! Your profile is 100% complete.';
+    } else if (!s.resume_url) {
+      document.getElementById('completenessTips').innerHTML = '⚠️ Upload your resume to apply for placement drives.';
+    }
+
+    // Form inputs
+    document.getElementById('pName').value = s.name || '';
+    document.getElementById('pEmail').value = s.email || '';
+    document.getElementById('pPhone').value = s.phone || '';
+    document.getElementById('pRollNumber').value = s.roll_number || '';
+    document.getElementById('pCourse').value = s.course || '';
+    document.getElementById('pBranch').value = s.branch || '';
+    document.getElementById('pDegree').value = s.degree || 'B.Tech';
+    document.getElementById('pBatchYear').value = s.batch_year || '';
+    document.getElementById('pPassingYear').value = s.passing_year || '';
+    document.getElementById('pCgpa').value = s.cgpa || '';
+    document.getElementById('pBacklogs').value = s.backlog_count || 0;
+    document.getElementById('pGender').value = s.gender || '';
+    document.getElementById('p10th').value = s.tenth_percentage || '';
+    document.getElementById('p12th').value = s.twelfth_percentage || '';
+    document.getElementById('pDob').value = s.dob ? s.dob.substring(0, 10) : '';
+    document.getElementById('pAddress').value = s.address || '';
+
+    // Resume Box
+    const resBox = document.getElementById('resumeStatusBox');
+    if (s.resume_url) {
+      const downloadUrl = apiAssetUrl(s.resume_url);
+      resBox.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between p-2 bg-light border rounded">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">📄</span>
+            <div>
+              <div class="fw-semibold small">Resume on File</div>
+              <small class="text-success">Ready for applications</small>
+            </div>
+          </div>
+          <a href="${downloadUrl}" target="_blank" class="btn btn-sm btn-outline-success">View / Download</a>
+        </div>
+      `;
+    } else {
+      resBox.innerHTML = `
+        <div class="alert alert-warning py-2 px-3 small mb-0">
+          ⚠️ No resume uploaded yet. You will not be able to apply to drives without a resume.
+        </div>
+      `;
+    }
+
+    // Skills
+    const skillContainer = document.getElementById('skillsChipContainer');
+    if (s.skills && s.skills.length > 0) {
+      skillContainer.innerHTML = s.skills.map(sk => `
+        <span class="skill-chip">
+          ${escHtml(sk.skill_name)}
+          <span class="remove-chip" onclick="deleteSkill(${sk.id})" title="Remove skill">&times;</span>
+        </span>
+      `).join('');
+    } else {
+      skillContainer.innerHTML = '<small class="text-muted">No skills added yet.</small>';
+    }
+
+    // Projects
+    const projContainer = document.getElementById('projectsListContainer');
+    if (s.projects && s.projects.length > 0) {
+      projContainer.innerHTML = s.projects.map(p => `
+        <div class="border rounded p-2 mb-2 bg-white">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="fw-bold small">${escHtml(p.title)}</div>
+            <button class="btn btn-link text-danger p-0" onclick="deleteProject(${p.id})">&times;</button>
+          </div>
+          ${p.description ? `<small class="text-muted d-block">${escHtml(p.description)}</small>` : ''}
+          ${p.tech_stack ? `<small class="text-primary d-block mt-1">Tech: ${escHtml(p.tech_stack)}</small>` : ''}
+          ${p.project_url ? `<a href="${escHtml(p.project_url)}" target="_blank" class="small text-decoration-none mt-1 d-inline-block">🔗 Project Link</a>` : ''}
+        </div>
+      `).join('');
+    } else {
+      projContainer.innerHTML = '<small class="text-muted">No projects added yet.</small>';
+    }
+
+    // Certifications
+    const certContainer = document.getElementById('certsListContainer');
+    if (s.certifications && s.certifications.length > 0) {
+      certContainer.innerHTML = s.certifications.map(c => `
+        <div class="border rounded p-2 mb-2 bg-white">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="fw-bold small">${escHtml(c.title)}</div>
+            <button class="btn btn-link text-danger p-0" onclick="deleteCert(${c.id})">&times;</button>
+          </div>
+          ${c.issuing_organization ? `<small class="text-muted d-block">${escHtml(c.issuing_organization)} ${c.issue_date ? '· ' + formatDate(c.issue_date) : ''}</small>` : ''}
+          ${c.credential_url ? `<a href="${escHtml(c.credential_url)}" target="_blank" class="small text-decoration-none mt-1 d-inline-block">🏅 View Credential</a>` : ''}
+        </div>
+      `).join('');
+    } else {
+      certContainer.innerHTML = '<small class="text-muted">No certifications added yet.</small>';
+    }
+  }
+
+  function clearStudentForm() {
+    document.getElementById('pName').value = '';
+    document.getElementById('pPhone').value = '';
+    document.getElementById('pCourse').value = '';
+    document.getElementById('pBranch').value = '';
+    document.getElementById('pDegree').value = 'B.Tech';
+    document.getElementById('pBatchYear').value = '';
+    document.getElementById('pPassingYear').value = '';
+    document.getElementById('pCgpa').value = '';
+    document.getElementById('pBacklogs').value = '0';
+    document.getElementById('pGender').value = '';
+    document.getElementById('p10th').value = '';
+    document.getElementById('p12th').value = '';
+    document.getElementById('pDob').value = '';
+    document.getElementById('pAddress').value = '';
+  }
+
+  // Profile Form submit
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const fd = new FormData(e.target);
+    const payload = {
+      name:                fd.get('name'),
+      phone:               fd.get('phone') || null,
+      course:              fd.get('course') || null,
+      branch:              fd.get('branch'),
+      degree:              fd.get('degree'),
+      batch_year:          fd.get('batch_year') ? Number(fd.get('batch_year')) : undefined,
+      passing_year:        fd.get('passing_year') ? Number(fd.get('passing_year')) : null,
+      cgpa:                fd.get('cgpa') !== '' ? Number(fd.get('cgpa')) : 0,
+      backlog_count:       fd.get('backlog_count') !== '' ? Number(fd.get('backlog_count')) : 0,
+      tenth_percentage:    fd.get('tenth_percentage') !== '' ? Number(fd.get('tenth_percentage')) : null,
+      twelfth_percentage:  fd.get('twelfth_percentage') !== '' ? Number(fd.get('twelfth_percentage')) : null,
+      gender:              fd.get('gender') || null,
+      dob:                 fd.get('dob') || null,
+      address:             fd.get('address') || null
+    };
+
+    try {
+      const res = await apiRequest('/students/me', { method: 'PUT', body: payload });
+      showAlert('Profile updated successfully! Form has been cleared.', 'success');
+      currentStudentData = res.data.student;
+      renderProfile(currentStudentData);
+      clearStudentForm();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Profile Changes';
+    }
+  });
+
+  // Resume Upload
+  document.getElementById('resumeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('uploadResumeBtn');
+    const fileInput = document.getElementById('resumeFileInput');
+    if (!fileInput.files.length) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+
+    const fd = new FormData();
+    fd.append('resume', fileInput.files[0]);
+
+    try {
+      const res = await apiRequest('/students/me/resume', {
+        method: 'POST',
+        body: fd,
+        isFormData: true
+      });
+      showAlert('Resume uploaded successfully!', 'success');
+      fileInput.value = '';
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Upload';
+    }
+  });
+
+  // Add Skill
+  document.getElementById('addSkillForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('skillNameInput');
+    const skill = input.value.trim();
+    if (!skill) return;
+
+    try {
+      await apiRequest('/students/me/skills', {
+        method: 'POST',
+        body: { skill_name: skill }
+      });
+      input.value = '';
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  async function quickAddSkill(skillName) {
+    try {
+      await apiRequest('/students/me/skills', {
+        method: 'POST',
+        body: { skill_name: skillName }
+      });
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  async function deleteSkill(skillId) {
+    try {
+      await apiRequest(`/students/me/skills/${skillId}`, { method: 'DELETE' });
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  // Projects
+  document.getElementById('addProjectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await apiRequest('/students/me/projects', {
+        method: 'POST',
+        body: {
+          title: fd.get('title'),
+          description: fd.get('description'),
+          tech_stack: fd.get('tech_stack'),
+          project_url: fd.get('project_url')
+        }
+      });
+      e.target.reset();
+      bootstrap.Collapse.getInstance(document.getElementById('newProjectCollapse'))?.hide();
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  async function deleteProject(id) {
+    if (!confirm('Remove this project?')) return;
+    try {
+      await apiRequest(`/students/me/projects/${id}`, { method: 'DELETE' });
+      await loadProfile();
+    } catch (err) { showAlert(err.message); }
+  }
+
+  // Certifications
+  document.getElementById('addCertForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await apiRequest('/students/me/certifications', {
+        method: 'POST',
+        body: {
+          title: fd.get('title'),
+          issuing_organization: fd.get('issuing_organization'),
+          issue_date: fd.get('issue_date') || null,
+          credential_url: fd.get('credential_url') || null
+        }
+      });
+      e.target.reset();
+      bootstrap.Collapse.getInstance(document.getElementById('newCertCollapse'))?.hide();
+      await loadProfile();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  });
+
+  async function deleteCert(id) {
+    if (!confirm('Remove this certification?')) return;
+    try {
+      await apiRequest(`/students/me/certifications/${id}`, { method: 'DELETE' });
+      await loadProfile();
+    } catch (err) { showAlert(err.message); }
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

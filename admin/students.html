@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Students Directory & Verification — SPMS Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<!-- Admin Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-admin">
+  <div class="container">
+    <a class="navbar-brand" href="dashboard.html">
+      <span>🛡️</span> SPMS Admin TPO
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="adminNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="dashboard.html">📊 Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="companies.html">🏢 Companies</a></li>
+        <li class="nav-item"><a class="nav-link active" href="students.html">🎓 Students & Verification</a></li>
+        <li class="nav-item"><a class="nav-link" href="applications.html">📄 Applications</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <span class="user-badge">🛡️ TPO Administrator</span>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-1 fw-bold">Student Directory & Verification Management</h2>
+      <p class="text-muted mb-0">Review student registrations, verify academic credentials, and approve or reject portal access.</p>
+    </div>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- Search & Filters -->
+  <div class="card mb-4 border-0 shadow-sm bg-white">
+    <div class="card-body p-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <label class="small text-muted fw-bold mb-1">Search</label>
+          <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search name, roll, email…" oninput="filterStudents()" />
+        </div>
+        <div class="col-md-3">
+          <label class="small text-muted fw-bold mb-1">Verification Status</label>
+          <select class="form-select form-select-sm" id="verificationFilter" onchange="filterStudents()">
+            <option value="">All Verification Statuses</option>
+            <option value="pending" selected>⏳ Pending Verification</option>
+            <option value="approved">✅ Approved</option>
+            <option value="rejected">❌ Rejected</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="small text-muted fw-bold mb-1">Branch</label>
+          <input type="text" class="form-control form-control-sm" id="branchFilter" placeholder="e.g. CS, IT" oninput="filterStudents()" />
+        </div>
+        <div class="col-md-2">
+          <label class="small text-muted fw-bold mb-1">Batch Year</label>
+          <input type="number" class="form-control form-control-sm" id="batchYearFilter" placeholder="e.g. 2025" oninput="filterStudents()" />
+        </div>
+        <div class="col-md-2">
+          <label class="small text-muted fw-bold mb-1">Min CGPA</label>
+          <input type="number" class="form-control form-control-sm" id="minCgpaFilter" placeholder="e.g. 7.5" step="0.1" min="0" max="10" oninput="filterStudents()" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="studentsTable">
+          <thead class="table-light">
+            <tr>
+              <th>Student Name & Roll No</th>
+              <th>Academic Program</th>
+              <th>Scores & Eligibility</th>
+              <th>Verification Status</th>
+              <th>Resume</th>
+              <th class="text-end">TPO Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-danger"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Student Detail & Verification Modal -->
+<div class="modal fade" id="studentDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="modalStudentName">Student Profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalStudentBody">
+        <div class="text-center py-4"><div class="spinner-border text-danger"></div></div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between" id="modalStudentFooter">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        <div class="d-flex gap-2" id="modalActionButtons"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Reason Modal -->
+<div class="modal fade" id="rejectStudentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold">Reject Student Registration</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rejectStudentId" />
+        <p class="text-muted mb-3">Please provide a reason for rejecting this student's registration. The student will be notified and can view this message.</p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="rejectionStudentReasonInput" rows="3" required placeholder="e.g. Invalid Roll Number, CGPA or percentage mismatch with university records, duplicate entry…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="confirmRejectStudent()">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['admin']);
+
+  let allStudents = [];
+
+  async function loadStudents() {
+    try {
+      const res = await apiRequest('/students');
+      allStudents = res.data?.students || [];
+      filterStudents();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+      document.querySelector('#studentsTable tbody').innerHTML = `
+        <tr><td colspan="6" class="text-center text-muted py-4">Failed to load students.</td></tr>
+      `;
+    }
+  }
+
+  function filterStudents() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+    const verification = document.getElementById('verificationFilter').value;
+    const branch = (document.getElementById('branchFilter').value || '').toLowerCase().trim();
+    const batchYear = document.getElementById('batchYearFilter').value;
+    const minCgpa = document.getElementById('minCgpaFilter').value;
+
+    const filtered = allStudents.filter(s => {
+      const matchSearch = !search ||
+        (s.name && s.name.toLowerCase().includes(search)) ||
+        (s.roll_number && s.roll_number.toLowerCase().includes(search)) ||
+        (s.email && s.email.toLowerCase().includes(search));
+
+      const status = s.verification_status || 'pending';
+      const matchVerification = !verification || status === verification;
+      const matchBranch = !branch || (s.branch && s.branch.toLowerCase().includes(branch));
+      const matchBatch = !batchYear || String(s.batch_year) === String(batchYear);
+      const matchCgpa = !minCgpa || Number(s.cgpa) >= Number(minCgpa);
+
+      return matchSearch && matchVerification && matchBranch && matchBatch && matchCgpa;
+    });
+
+    renderStudents(filtered);
+  }
+
+  function renderStudents(students) {
+    const tbody = document.querySelector('#studentsTable tbody');
+    if (!students.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="6" class="text-center text-muted py-5">No students found matching this filter.</td></tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => {
+      let resumeHtml = '<span class="text-muted small">No Resume</span>';
+      if (s.resume_url) {
+        const fullUrl = apiAssetUrl(s.resume_url);
+        resumeHtml = `<a href="${fullUrl}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2">📄 CV</a>`;
+      }
+
+      const vStatus = s.verification_status || 'pending';
+      let statusBadge = '<span class="badge bg-warning text-dark">⏳ Pending Verification</span>';
+      if (vStatus === 'approved') {
+        statusBadge = '<span class="badge bg-success">✅ Approved</span>';
+      } else if (vStatus === 'rejected') {
+        statusBadge = '<span class="badge bg-danger">❌ Rejected</span>';
+      }
+
+      return `
+        <tr>
+          <td>
+            <div class="fw-bold text-dark fs-6">${escHtml(s.name)}</div>
+            <div class="small fw-semibold text-primary">${escHtml(s.roll_number)}</div>
+            <small class="text-muted d-block">${escHtml(s.email)} ${s.phone ? '· ' + escHtml(s.phone) : ''}</small>
+          </td>
+          <td>
+            <div>${escHtml(s.branch)}</div>
+            <small class="text-muted">${escHtml(s.course || '—')} (${escHtml(s.degree || 'B.Tech')})</small>
+            <div class="small text-muted">Batch: ${s.batch_year} | Grad: ${s.passing_year || '—'}</div>
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap mb-1">
+              <span class="badge bg-light text-dark border">CGPA: ${s.cgpa}</span>
+              <span class="badge bg-light text-dark border">Backlogs: ${s.backlog_count || 0}</span>
+            </div>
+            <small class="text-muted d-block">10th: ${s.tenth_percentage || '—'}% | 12th: ${s.twelfth_percentage || '—'}%</small>
+          </td>
+          <td>
+            ${statusBadge}
+            ${vStatus === 'rejected' && s.rejection_reason ? `
+              <div class="small text-danger mt-1 text-truncate" style="max-width: 180px;" title="${escHtml(s.rejection_reason)}">
+                ${escHtml(s.rejection_reason)}
+              </div>
+            ` : ''}
+          </td>
+          <td>${resumeHtml}</td>
+          <td class="text-end">
+            <div class="d-flex justify-content-end gap-1 flex-wrap">
+              ${vStatus === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="approveStudent(${s.id})">
+                  ✅ Approve
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="openRejectStudentModal(${s.id})">
+                  ❌ Reject
+                </button>
+              ` : ''}
+              ${vStatus === 'rejected' ? `
+                <button class="btn btn-sm btn-outline-success" onclick="approveStudent(${s.id})">
+                  Re-Approve
+                </button>
+              ` : ''}
+              ${vStatus === 'approved' ? `
+                <button class="btn btn-sm btn-outline-danger" onclick="openRejectStudentModal(${s.id})">
+                  Revoke
+                </button>
+              ` : ''}
+              <button class="btn btn-sm btn-outline-secondary" onclick="viewStudentModal(${s.id})">
+                👁️ Review
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function approveStudent(studentId) {
+    if (!confirm('Verify and approve this student for placement portal access?')) return;
+    try {
+      await apiRequest(`/students/${studentId}/approve`, { method: 'PATCH' });
+      showAlert('Student registration verified and approved successfully!', 'success');
+      bootstrap.Modal.getInstance(document.getElementById('studentDetailModal'))?.hide();
+      await loadStudents();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  function openRejectStudentModal(studentId) {
+    document.getElementById('rejectStudentId').value = studentId;
+    document.getElementById('rejectionStudentReasonInput').value = '';
+    new bootstrap.Modal(document.getElementById('rejectStudentModal')).show();
+  }
+
+  async function confirmRejectStudent() {
+    const id = document.getElementById('rejectStudentId').value;
+    const reason = document.getElementById('rejectionStudentReasonInput').value.trim();
+    if (!reason) {
+      alert('Please specify a rejection reason for the student.');
+      return;
+    }
+
+    try {
+      await apiRequest(`/students/${id}/reject`, {
+        method: 'PATCH',
+        body: { reason }
+      });
+      bootstrap.Modal.getInstance(document.getElementById('rejectStudentModal')).hide();
+      bootstrap.Modal.getInstance(document.getElementById('studentDetailModal'))?.hide();
+      showAlert('Student registration rejected and notification sent.', 'info');
+      await loadStudents();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    }
+  }
+
+  async function viewStudentModal(studentId) {
+    const modalBody = document.getElementById('modalStudentBody');
+    const actionBtns = document.getElementById('modalActionButtons');
+    modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-danger"></div></div>';
+    actionBtns.innerHTML = '';
+    new bootstrap.Modal(document.getElementById('studentDetailModal')).show();
+
+    try {
+      const res = await apiRequest(`/students/${studentId}`);
+      const s = res.data.student;
+      document.getElementById('modalStudentName').textContent = `${s.name} (${s.roll_number})`;
+
+      let resumeBtn = '<span class="text-muted small">No resume uploaded yet</span>';
+      if (s.resume_url) {
+        const fullUrl = apiAssetUrl(s.resume_url);
+        resumeBtn = `<a href="${fullUrl}" target="_blank" class="btn btn-sm btn-primary">📄 View / Download Resume</a>`;
+      }
+
+      const vStatus = s.verification_status || 'pending';
+      let statusAlert = `
+        <div class="alert alert-warning py-2 px-3 d-flex justify-content-between align-items-center mb-3">
+          <div>⏳ <strong>Status: Pending Verification</strong> — Awaiting TPO administrator review.</div>
+        </div>
+      `;
+      if (vStatus === 'approved') {
+        statusAlert = `
+          <div class="alert alert-success py-2 px-3 mb-3">
+            ✅ <strong>Status: Approved & Verified</strong> — Student has full access to campus placement drives.
+          </div>
+        `;
+      } else if (vStatus === 'rejected') {
+        statusAlert = `
+          <div class="alert alert-danger py-2 px-3 mb-3">
+            ❌ <strong>Status: Rejected</strong> — Reason: ${escHtml(s.rejection_reason || 'Not specified')}
+          </div>
+        `;
+      }
+
+      modalBody.innerHTML = `
+        ${statusAlert}
+        <div class="card mb-3 bg-light border-0">
+          <div class="card-body">
+            <h6 class="fw-bold border-bottom pb-2 mb-3">Personal & Contact Details</h6>
+            <div class="row g-3">
+              <div class="col-md-6"><strong>Full Name:</strong> ${escHtml(s.name)}</div>
+              <div class="col-md-6"><strong>Roll Number:</strong> <span class="badge bg-primary">${escHtml(s.roll_number)}</span></div>
+              <div class="col-md-6"><strong>Email Address:</strong> ${escHtml(s.email)}</div>
+              <div class="col-md-6"><strong>Phone Number:</strong> ${escHtml(s.phone || '—')}</div>
+              <div class="col-md-6"><strong>Gender:</strong> ${escHtml(s.gender || '—')}</div>
+              <div class="col-md-6"><strong>Date of Birth:</strong> ${s.dob ? s.dob.substring(0, 10) : '—'}</div>
+              <div class="col-12"><strong>Address:</strong> ${escHtml(s.address || '—')}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3 bg-light border-0">
+          <div class="card-body">
+            <h6 class="fw-bold border-bottom pb-2 mb-3">Academic & Cutoff Information</h6>
+            <div class="row g-3">
+              <div class="col-md-6"><strong>Course & Degree:</strong> ${escHtml(s.course || '—')} (${escHtml(s.degree || 'B.Tech')})</div>
+              <div class="col-md-6"><strong>Branch / Dept:</strong> ${escHtml(s.branch)}</div>
+              <div class="col-md-6"><strong>Batch Admission Year:</strong> ${s.batch_year}</div>
+              <div class="col-md-6"><strong>Expected Passing Year:</strong> ${s.passing_year || '—'}</div>
+              <div class="col-md-6"><strong>Current CGPA:</strong> <span class="fw-bold text-primary">${s.cgpa}</span> / 10.00</div>
+              <div class="col-md-6"><strong>Active Backlogs:</strong> <span class="fw-bold ${s.backlog_count > 0 ? 'text-danger' : 'text-success'}">${s.backlog_count || 0}</span></div>
+              <div class="col-md-6"><strong>10th Standard Score:</strong> ${s.tenth_percentage ? s.tenth_percentage + '%' : '—'}</div>
+              <div class="col-md-6"><strong>12th / Diploma Score:</strong> ${s.twelfth_percentage ? s.twelfth_percentage + '%' : '—'}</div>
+              <div class="col-12"><strong>Resume / CV:</strong> ${resumeBtn}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3 bg-light border-0">
+          <div class="card-body">
+            <h6 class="fw-bold border-bottom pb-2 mb-2">Technical Skills</h6>
+            <div>
+              ${(s.skills && s.skills.length) 
+                ? s.skills.map(sk=>`<span class="skill-chip">${escHtml(sk.skill_name)}</span>`).join('') 
+                : '<span class="text-muted small">No skills added yet</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-light border-0">
+          <div class="card-body">
+            <h6 class="fw-bold border-bottom pb-2 mb-2">Projects & Certifications</h6>
+            ${(s.projects && s.projects.length) ? s.projects.map(p => `
+              <div class="p-2 border rounded mb-2 bg-white">
+                <strong>${escHtml(p.title)}</strong>
+                ${p.tech_stack ? `<span class="badge bg-light text-primary border ms-2">${escHtml(p.tech_stack)}</span>` : ''}
+                ${p.description ? `<p class="mb-0 small text-muted">${escHtml(p.description)}</p>` : ''}
+              </div>
+            `).join('') : '<span class="text-muted small d-block mb-2">No projects listed</span>'}
+          </div>
+        </div>
+      `;
+
+      if (vStatus === 'pending') {
+        actionBtns.innerHTML = `
+          <button class="btn btn-danger btn-sm" onclick="openRejectStudentModal(${s.id})">❌ Reject Student</button>
+          <button class="btn btn-success btn-sm" onclick="approveStudent(${s.id})">✅ Approve Student</button>
+        `;
+      } else if (vStatus === 'rejected') {
+        actionBtns.innerHTML = `
+          <button class="btn btn-success btn-sm" onclick="approveStudent(${s.id})">✅ Re-Approve Student</button>
+        `;
+      } else {
+        actionBtns.innerHTML = `
+          <button class="btn btn-danger btn-sm" onclick="openRejectStudentModal(${s.id})">❌ Revoke Approval</button>
+        `;
+      }
+    } catch (err) {
+      modalBody.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+    }
+  }
+
+  loadStudents();
+</script>
+</body>
+</html>

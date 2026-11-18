@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Profile — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .avatar-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-md);
+      background: var(--company-gradient);
+      color: white;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Company Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-company">
+  <div class="container">
+    <a class="navbar-brand" href="drives.html">
+      <span>🏢</span> SPMS Recruiter
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#companyNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="companyNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Placement Drives</a></li>
+        <li class="nav-item"><a class="nav-link" href="create-drive.html">➕ Create Drive</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="profile.html" class="nav-link active">🏢 <span id="navCompanyName">Profile</span></a>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 900px;">
+  <div id="alertBox"></div>
+
+  <!-- Company Status Card -->
+  <div class="card mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar-circle" id="companyAvatar">CO</div>
+          <div>
+            <h3 class="mb-0 fw-bold" id="headerCompanyName">Loading…</h3>
+            <p class="text-muted mb-0" id="headerIndustryWebsite">—</p>
+          </div>
+        </div>
+
+        <div id="approvalStatusBox">
+          <span class="badge bg-secondary fs-6">Loading status…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">Company & HR Contact Information</div>
+    <div class="card-body">
+      <form id="companyProfileForm">
+        <div class="row g-3">
+          <div class="col-md-12">
+            <label class="form-label">Official Company Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="company_name" id="cName" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Industry Domain</label>
+            <input type="text" class="form-control" name="industry" id="cIndustry" placeholder="e.g. IT Services, Fintech, Automotive" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Corporate Website</label>
+            <input type="url" class="form-control" name="website" id="cWebsite" placeholder="https://company.com" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Company Overview / Description</label>
+            <textarea class="form-control" name="description" id="cDescription" rows="3" placeholder="Describe your company, products, and culture…"></textarea>
+          </div>
+
+          <div class="col-12"><hr class="my-1 text-muted" /></div>
+
+          <div class="col-md-6">
+            <label class="form-label">HR Lead / Contact Name</label>
+            <input type="text" class="form-control" name="hr_contact_name" id="cHrName" placeholder="Recruiter Full Name" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">HR Contact Phone</label>
+            <input type="tel" class="form-control" name="hr_contact_phone" id="cHrPhone" placeholder="Mobile / Direct line" />
+          </div>
+
+          <div class="col-12 mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1" id="saveProfileBtn">
+              Update Company Profile
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="clearCompanyForm()">
+              🧹 Clear Form
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['company']);
+
+  async function loadCompanyProfile() {
+    try {
+      const res = await apiRequest('/companies/me');
+      if (res && res.data && res.data.company) {
+        renderProfile(res.data.company);
+      }
+    } catch (err) {
+      showAlert(err.message || 'Failed to load profile.', 'danger');
+    }
+  }
+
+  function clearCompanyForm() {
+    document.getElementById('cName').value = '';
+    document.getElementById('cIndustry').value = '';
+    document.getElementById('cWebsite').value = '';
+    document.getElementById('cDescription').value = '';
+    document.getElementById('cHrName').value = '';
+    document.getElementById('cHrPhone').value = '';
+  }
+
+  function updateHeaderDisplay(c) {
+    if (!c) return;
+    const initials = c.company_name ? c.company_name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'CO';
+    const avatarEl = document.getElementById('companyAvatar');
+    if (avatarEl) avatarEl.textContent = initials;
+    
+    const headerNameEl = document.getElementById('headerCompanyName');
+    if (headerNameEl) headerNameEl.textContent = c.company_name || 'Company';
+    
+    const navNameEl = document.getElementById('navCompanyName');
+    if (navNameEl) navNameEl.textContent = c.company_name ? c.company_name.split(' ')[0] : 'Profile';
+    
+    const headerDetailsEl = document.getElementById('headerIndustryWebsite');
+    if (headerDetailsEl) {
+      headerDetailsEl.innerHTML = `
+        ${escHtml(c.industry || 'General Industry')}
+        ${c.website ? `· <a href="${escHtml(c.website)}" target="_blank">${escHtml(c.website)}</a>` : ''}
+      `;
+    }
+
+    const statusBox = document.getElementById('approvalStatusBox');
+    if (statusBox) {
+      if (c.is_approved) {
+        statusBox.innerHTML = `
+          <span class="badge bg-success fs-6 py-2 px-3">
+            ✅ Verified & Approved by TPO
+          </span>
+        `;
+      } else {
+        statusBox.innerHTML = `
+          <span class="badge bg-warning text-dark fs-6 py-2 px-3">
+            ⏳ Pending TPO Approval
+          </span>
+        `;
+      }
+    }
+  }
+
+  function renderProfile(c) {
+    if (!c) return;
+    updateHeaderDisplay(c);
+
+    if (c.company_name !== undefined) document.getElementById('cName').value = c.company_name || '';
+    if (c.industry !== undefined) document.getElementById('cIndustry').value = c.industry || '';
+    if (c.website !== undefined) document.getElementById('cWebsite').value = c.website || '';
+    if (c.description !== undefined) document.getElementById('cDescription').value = c.description || '';
+    if (c.hr_contact_name !== undefined) document.getElementById('cHrName').value = c.hr_contact_name || '';
+    if (c.hr_contact_phone !== undefined) document.getElementById('cHrPhone').value = c.hr_contact_phone || '';
+  }
+
+  document.getElementById('companyProfileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const fd = new FormData(e.target);
+    const payload = {
+      company_name:     fd.get('company_name'),
+      industry:         fd.get('industry') || null,
+      website:          fd.get('website') || null,
+      description:      fd.get('description') || null,
+      hr_contact_name:  fd.get('hr_contact_name') || null,
+      hr_contact_phone: fd.get('hr_contact_phone') || null
+    };
+
+    try {
+      const res = await apiRequest('/companies/me', { method: 'PUT', body: payload });
+      showAlert('Company profile updated successfully! Form has been cleared.', 'success');
+      if (res && res.data && res.data.company) {
+        updateHeaderDisplay(res.data.company);
+      }
+      clearCompanyForm();
+    } catch (err) {
+      showAlert(err.message, 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update Company Profile';
+    }
+  });
+
+  loadCompanyProfile();
+</script>
+</body>
+</html>

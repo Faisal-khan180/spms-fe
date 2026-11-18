@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post Placement Drive — SPMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<!-- Company Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark spms-navbar navbar-company">
+  <div class="container">
+    <a class="navbar-brand" href="drives.html">
+      <span>🏢</span> SPMS Recruiter
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#companyNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="companyNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="drives.html">💼 Placement Drives</a></li>
+        <li class="nav-item"><a class="nav-link active" href="create-drive.html">➕ Create Drive</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <a href="profile.html" class="nav-link">🏢 Profile</a>
+        <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 860px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Post a Placement Drive</h2>
+      <p class="text-muted mb-0">Specify job role details, eligibility criteria, and interview process.</p>
+    </div>
+    <a href="drives.html" class="btn btn-outline-secondary btn-sm">← Back to My Drives</a>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <form id="driveForm">
+    <!-- Basic Job Role Information -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header fw-bold">1. Role & Job Description</div>
+      <div class="card-body row g-3">
+        <div class="col-md-12">
+          <label class="form-label">Job Title / Designation <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="title" required placeholder="e.g. Graduate Software Engineer, Data Analyst" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Job Description & Responsibilities <span class="text-danger">*</span></label>
+          <textarea class="form-control" name="description" rows="4" required placeholder="Outline key duties, team context, technologies used, and expectations…"></textarea>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Job Type</label>
+          <select class="form-select" name="job_type">
+            <option value="full_time">Full Time</option>
+            <option value="internship">Internship</option>
+            <option value="ppo">PPO (Pre-Placement Offer)</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Work Mode</label>
+          <select class="form-select" name="work_mode">
+            <option value="on_site">On-site</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Job Location</label>
+          <input type="text" class="form-control" name="location" placeholder="e.g. Bengaluru, Hyderabad, Remote" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Annual CTC / Salary (LPA)</label>
+          <input type="number" class="form-control" name="package_ctc" min="0" step="0.1" placeholder="e.g. 14.5" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Number of Positions / Openings</label>
+          <input type="number" class="form-control" name="num_openings" min="1" value="1" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Selection Process Overview</label>
+          <textarea class="form-control" name="selection_process" rows="2" placeholder="e.g. Online Assessment (60 mins) → Technical Interview (Round 1) → HR & Offer Round"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eligibility Engine Criteria -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header fw-bold">2. Smart Eligibility & Academic Cutoffs</div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Eligible Course</label>
+          <input type="text" class="form-control" name="eligible_course" placeholder="e.g. B.Tech, MCA, MBA (or leave empty for all)" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Target Batch / Passing Year</label>
+          <input type="number" class="form-control" name="passing_year" placeholder="e.g. 2025" min="2015" max="2035" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Eligible Branches / Departments <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="eligible_branches_input" required placeholder="Computer Science, Electronics, Mechanical (comma-separated)" />
+          <small class="text-muted">Enter branch names separated by commas (e.g. Computer Science, Information Technology, Electronics).</small>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Minimum CGPA Cutoff</label>
+          <input type="number" class="form-control" name="min_cgpa" min="0" max="10" step="0.01" value="0.00" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Maximum Active Backlogs Allowed</label>
+          <input type="number" class="form-control" name="max_backlogs" min="0" value="0" />
+        </div>
+        <div class="col-md-4">
+          <!-- spacer -->
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Minimum 10th Percentage (%)</label>
+          <input type="number" class="form-control" name="min_10th_percentage" min="0" max="100" step="0.01" placeholder="e.g. 60" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Minimum 12th/Diploma Percentage (%)</label>
+          <input type="number" class="form-control" name="min_12th_percentage" min="0" max="100" step="0.01" placeholder="e.g. 60" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Required Skills (for Smart Ranking)</label>
+          <input type="text" class="form-control" name="required_skills" placeholder="Java, Python, SQL, React, Data Structures (comma-separated)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Drive Schedule -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header fw-bold">3. Schedule & Application Timeline</div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Applications Open Date</label>
+          <input type="datetime-local" class="form-control" name="application_start_date" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Application Deadline</label>
+          <input type="datetime-local" class="form-control" name="application_deadline" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Estimated Drive Date</label>
+          <input type="datetime-local" class="form-control" name="drive_date" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex gap-3 mb-5">
+      <button type="submit" class="btn btn-primary px-4 py-2" id="submitApprovalBtn" onclick="setStatus('pending_approval')">
+        🚀 Submit for TPO Approval
+      </button>
+      <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="setStatus('draft'); document.getElementById('driveForm').requestSubmit()">
+        Save as Draft
+      </button>
+      <a href="drives.html" class="btn btn-link text-muted">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  requireAuth(['company']);
+
+  let chosenStatus = 'pending_approval';
+  function setStatus(s) { chosenStatus = s; }
+
+  document.getElementById('driveForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitApprovalBtn');
+    btn.disabled = true;
+
+    const fd = new FormData(e.target);
+    const branchInput = fd.get('eligible_branches_input') || '';
+    const branches = branchInput.split(',').map(s => s.trim()).filter(Boolean);
+
+    const payload = {
+      title:               fd.get('title'),
+      description:         fd.get('description'),
+      job_type:            fd.get('job_type'),
+      work_mode:           fd.get('work_mode'),
+      location:            fd.get('location') || null,
+      package_ctc:         fd.get('package_ctc') ? Number(fd.get('package_ctc')) : null,
+      num_openings:        Number(fd.get('num_openings')) || 1,
+      selection_process:   fd.get('selection_process') || null,
+      eligible_course:     fd.get('eligible_course') || null,
+      passing_year:        fd.get('passing_year') ? Number(fd.get('passing_year')) : null,
+      eligible_branches:   branches,
+      min_cgpa:            Number(fd.get('min_cgpa')) || 0,
+      max_backlogs:        Number(fd.get('max_backlogs')) || 0,
+      min_10th_percentage: fd.get('min_10th_percentage') ? Number(fd.get('min_10th_percentage')) : null,
+      min_12th_percentage: fd.get('min_12th_percentage') ? Number(fd.get('min_12th_percentage')) : null,
+      required_skills:     fd.get('required_skills') || null,
+      application_start_date: fd.get('application_start_date') ? fd.get('application_start_date').replace('T', ' ') + ':00' : null,
+      application_deadline:   fd.get('application_deadline')   ? fd.get('application_deadline').replace('T', ' ') + ':00' : null,
+      drive_date:          fd.get('drive_date') ? fd.get('drive_date').replace('T', ' ') + ':00' : null,
+      status:              chosenStatus
+    };
+
+    try {
+      const res = await apiRequest('/drives', { method: 'POST', body: payload });
+      showAlert(`Placement drive "${res.data.drive.title}" created successfully!`, 'success');
+      e.target.reset();
+      setTimeout(() => window.location.href = 'drives.html', 1200);
+    } catch (err) {
+      showAlert(err.message, 'danger');
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
