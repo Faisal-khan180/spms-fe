@@ -1,7 +1,12 @@
 /**
  * Central API client & UI Helper for Smart Placement Management System (SPMS)
  */
-let API_BASE_URL = "/api";
+const localHostname = window.location.hostname.replace(/^\[|\]$/g, '');
+const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(localHostname);
+const localApiHost = localHostname.includes(':') ? `[${localHostname}]` : localHostname;
+let API_BASE_URL = isLocalHost && window.location.port !== '5000'
+  ? `http://${localApiHost}:5000/api`
+  : "/api";
 const apiConfigReady = fetch('/config.json', { cache: 'no-store' })
   .then((response) => response.ok ? response.json() : null)
   .then((config) => {
@@ -99,7 +104,16 @@ async function apiRequest(path, { method = "GET", body, auth = true, isFormData 
       body: isFormData ? body : (body ? JSON.stringify(body) : undefined)
     });
 
-    const data = await response.json().catch(() => ({ success: false, message: 'Invalid JSON response from server' }));
+    const responseBody = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseBody);
+    } catch {
+      throw new Error(
+        `API returned a non-JSON response (HTTP ${response.status}) from ${response.url}. ` +
+        'Check that API_BASE_URL points to the backend and ends in /api.'
+      );
+    }
 
     if (response.status === 401) {
       // Session expired

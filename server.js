@@ -10,15 +10,16 @@ const frontendPath = __dirname;
 app.get('/config.json', (req, res) => {
   res.set('Cache-Control', 'no-store');
   const isRailwayHost = req.hostname.endsWith('.up.railway.app');
+  const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(req.hostname);
   const localApiUrl = `http://${req.hostname}:5000/api`;
   const railwayApiUrl = 'https://spms-be-production.up.railway.app/api';
   const configuredApiUrl = process.env.API_BASE_URL ||
-    (isRailwayHost ? railwayApiUrl : localApiUrl);
+    (isLocalHost ? localApiUrl : railwayApiUrl);
   let apiUrl = new URL(configuredApiUrl);
 
   if (isRailwayHost && apiUrl.protocol !== 'https:') {
     apiUrl = new URL(railwayApiUrl);
-  } else if (['localhost', '127.0.0.1', '::1'].includes(apiUrl.hostname)) {
+  } else if (isLocalHost && ['localhost', '127.0.0.1', '::1'].includes(apiUrl.hostname)) {
     apiUrl.hostname = req.hostname;
   }
   res.json({
